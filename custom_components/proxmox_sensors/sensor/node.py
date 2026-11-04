@@ -2,6 +2,7 @@
 
 from .base import ProxmoxBaseSensor, same_node
 from ..const import DOMAIN
+from ..logic.backup_task_identity import extract_backup_vmid
 from ..logic.pve_local_identity import (
     coordinator_pve_local_identity_context,
     mounted_disks_identifier,
@@ -901,17 +902,7 @@ class PVEBackupProgressSensor(ProxmoxBaseSensor):
         return backup_tasks
 
     def _extract_vmid(self, task):
-        upid = str(task.get("upid", ""))
-
-        try:
-            if "vm/" in upid:
-                return upid.split("vm/")[1].split(":")[0]
-            if "ct/" in upid:
-                return upid.split("ct/")[1].split(":")[0]
-        except Exception:
-            pass
-
-        return "unknown"
+        return extract_backup_vmid(task)
 
     @property
     def native_value(self):
@@ -990,6 +981,8 @@ class PVEBackupProgressSensor(ProxmoxBaseSensor):
             recent_backups_list.append(
                 {
                     "vmid": task.get("vmid"),
+                    "id": task.get("id"),
+                    "upid": task.get("upid"),
                     "status": task.get("status"),
                     "user": task.get("user"),
                     "starttime": task.get("starttime"),

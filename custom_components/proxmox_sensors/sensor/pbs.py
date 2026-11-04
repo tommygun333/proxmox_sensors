@@ -24,7 +24,8 @@ def extract_store_from_task(task):
 
 
 def _format_utc_timestamp(ts):
-    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m/%Y %H:%M:%S")
+    """Format a PBS UTC epoch in the configured Home Assistant timezone."""
+    return dt_util.as_local(dt_util.utc_from_timestamp(ts)).strftime("%d/%m/%Y %H:%M:%S")
 
 
 def _pbs_node_status(coordinator):
@@ -757,6 +758,10 @@ class ProxmoxPBSBackupsListSensor(ProxmoxPbsBaseSensor):
         return {
             "last_backups_per_resource": {
                 k: v["last_backup"] for k, v in sorted(summary.items())
+            },
+            # Machine-readable UTC epoch seconds, independent of DST and locale.
+            "last_backups_per_resource_epoch": {
+                k: v["raw_time"] for k, v in sorted(summary.items())
             },
             "total_snapshots": len(backups),
             "datastore_name": self._store,
